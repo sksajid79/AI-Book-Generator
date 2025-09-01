@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Book Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 100%);
+            color: white;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 2rem;
+        }
+
+        .step {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .step-header h2 {
+            color: #333;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 600;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #eee;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin: 2rem 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .api-config {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+        }
+
+        .api-provider {
+            margin-bottom: 1rem;
+        }
+
+        .status {
+            padding: 1rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.loading {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .book-preview {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-top: 2rem;
+        }
+
+        .chapter-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border-left: 4px solid #667eea;
+        }
+
+        .chapter-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .chapter-content {
+            color: #666;
+            line-height: 1.6;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .download-section {
+            text-align: center;
+            padding: 2rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .navigation {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🤖 AI Book Generator</h1>
+            <p>Create your book with the power of AI - OpenAI, Gemini, or Anthropic</p>
+        </header>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width: 25%"></div>
+        </div>
+
+        <main class="main-content">
+            <!-- Step 1: API Configuration -->
+            <div class="step active" id="step1">
+                <div class="step-header">
+                    <h2>🔑 Configure AI APIs</h2>
+                    <p>Set up your API keys for AI providers</p>
+                </div>
+
+                <div class="api-config">
+                    <div class="api-provider">
+                        <label for="openai-key">
+                            <strong>OpenAI API Key</strong> (GPT-4)
+                        </label>
+                        <input type="password" id="openai-key" placeholder="sk-...">
+                    </div>
+
+                    <div class="api-provider">
+                        <label for="gemini-key">
+                            <strong>Google Gemini API Key</strong>
+                        </label>
+                        <input type="password" id="gemini-key" placeholder="AI...">
+                    </div>
+
+                    <div class="api-provider">
+                        <label for="anthropic-key">
+                            <strong>Anthropic API Key</strong> (Claude)
+                        </label>
+                        <input type="password" id="anthropic-key" placeholder="sk-ant-...">
+                    </div>
+
+                    <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
+                        <strong>Note:</strong> You need at least one API key to proceed. Your keys are secure and only stored temporarily.
+                    </p>
+                </div>
+
+                <div id="apiStatus"></div>
+            </div>
+
+            <!-- Step 2: Book Details -->
+            <div class="step" id="step2">
+                <div class="step-header">
+                    <h2>📚 Book Details</h2>
+                    <p>Tell us about the book you want to create</p>
+                </div>
+
+                <form id="bookForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="title">Book Title *</label>
+                            <input type="text" id="title" name="title" required placeholder="Enter your book title">
+                        </div>
+                        <div class="form-group">
+                            <label for="genre">Genre *</label>
+                            <select id="genre" name="genre" required>
+                                <option value="">Select a genre</option>
+                                <option value="Fiction">Fiction</option>
+                                <option value="Non-Fiction">Non-Fiction</option>
+                                <option value="Mystery">Mystery</option>
+                                <option value="Romance">Romance</option>
+                                <option value="Science Fiction">Science Fiction</option>
+                                <option value="Fantasy">Fantasy</option>
+                                <option value="Thriller">Thriller</option>
+                                <option value="Biography">Biography</option>
+                                <option value="Self-Help">Self-Help</option>
+                                <option value="Business">Business</option>
+                                <option value="Educational">Educational</option>
+                                <option value="Children's">Children's</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="target-audience">Target Audience *</label>
+                            <select id="target-audience" name="target_audience" required>
+                                <option value="">Select target audience</option>
+                                <option value="Children (5-12)">Children (5-12)</option>
+                                <option value="Young Adults (13-17)">Young Adults (13-17)</option>
+                                <option value="Adults (18-64)">Adults (18-64)</option>
+                                <option value="Seniors (65+)">Seniors (65+)</option>
+                                <option value="General Audience">General Audience</option>
+                                <option value="Academic">Academic</option>
+                                <option value="Professional">Professional</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="length">Estimated Length *</label>
+                            <select id="length" name="length" required>
+                                <option value="">Select length</option>
+                                <option value="10000">Short (10,000 words)</option>
+                                <option value="25000">Novella (25,000 words)</option>
+                                <option value="50000">Medium Novel (50,000 words)</option>
+                                <option value="80000">Long Novel (80,000 words)</option>
+                                <option value="100000">Epic (100,000+ words)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="theme">Main Theme/Plot *</label>
+                        <textarea id="theme" name="theme" required placeholder="Describe the main theme, plot, or key concepts of your book..."></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="num-chapters">Number of Chapters</label>
+                            <input type="number" id="num-chapters" name="num_chapters" value="10" min="3" max="50">
+                        </div>
+                        <div class="form-group">
+                            <label for="tone">Writing Tone</label>
+                            <select id="tone" name="tone">
+                                <option value="Professional">Professional</option>
+                                <option value="Casual">Casual</option>
+                                <option value="Formal">Formal</option>
+                                <option value="Conversational">Conversational</option>
+                                <option value="Humorous">Humorous</option>
+                                <option value="Serious">Serious</option>
+                                <option value="Inspirational">Inspirational</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="additional-details">Additional Details (Optional)</label>
+                        <textarea id="additional-details" name="additional_details" placeholder="Any specific requirements, character details, or additional instructions..."></textarea>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Step 3: AI Provider Selection -->
+            <div class="step" id="step3">
+                <div class="step-header">
+                    <h2>🤖 Select AI Provider</h2>
+                    <p>Choose which AI will generate your book</p>
+                </div>
+
+                <div class="form-group">
+                    <label>Available AI Providers:</label>
+                    <div id="providerSelection" style="margin-top: 1rem;">
+                        <!-- Provider options will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Generation Options:</label>
+                    <div style="margin-top: 1rem;">
+                        <input type="radio" id="outline-only" name="generation-type" value="outline" checked>
+                        <label for="outline-only" style="display: inline; margin-left: 0.5rem;">Create Outline Only (Recommended first)</label><br>
+                        
+                        <input type="radio" id="full-book" name="generation-type" value="full" style="margin-top: 0.5rem;">
+                        <label for="full-book" style="display: inline; margin-left: 0.5rem;">Generate Complete Book (May take longer)</label><br>
+                        
+                        <input type="radio" id="chapter-by-chapter" name="generation-type" value="chapter" style="margin-top: 0.5rem;">
+                        <label for="chapter-by-chapter" style="display: inline; margin-left: 0.5rem;">Chapter by Chapter Generation</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Generation and Results -->
+            <div class="step" id="step4">
+                <div class="step-header">
+                    <h2>✨ Book Generation</h2>
+                    <p>Your AI-powered book is being created</p>
+                </div>
+
+                <div id="generationStatus"></div>
+                <div id="bookPreview"></div>
+            </div>
+
+            <div class="navigation">
+                <button class="btn btn-secondary" id="prevBtn" onclick="previousStep()">← Previous</button>
+                <div>Step <span id="currentStep">1</span> of 4</div>
+                <button class="btn" id="nextBtn" onclick="nextStep()">Next →</button>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let currentStepNum = 1;
+        let configuredAPIs = {};
+        let bookData = {};
+        let selectedProvider = '';
+
+        // Update progress and navigation
+        function updateUI() {
+            // Update progress bar
+            const progress = (currentStepNum / 4) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+            
+            // Update step indicator
+            document.getElementById('currentStep').textContent = currentStepNum;
+            
+            // Update navigation buttons
+            document.getElementById('prevBtn').style.display = currentStepNum === 1 ? 'none' : 'inline-block';
+            
+            const nextBtn = document.getElementById('nextBtn');
+            if (currentStepNum === 4) {
+                nextBtn.style.display = 'none';
+            } else {
+                nextBtn.style.display = 'inline-block';
+                nextBtn.textContent = currentStepNum === 3 ? 'Generate Book' : 'Next →';
+            }
+        }
+
+        // Show specific step
+        function showStep(stepNum) {
+            // Hide all steps
+            document.querySelectorAll('.step').forEach(step => {
+                step.classList.remove('active');
+            });
+            
+            // Show current step
+            document.getElementById(`step${stepNum}`).classList.add('active');
+            currentStepNum = stepNum;
+            updateUI();
+        }
+
+        // Next step function
+        function nextStep() {
+            if (currentStepNum === 1) {
+                configureAPIs();
+            } else if (currentStepNum === 2) {
+                if (validateBookForm()) {
+                    collectBookData();
+                    populateProviderSelection();
+                    showStep(3);
+                }
+            } else if (currentStepNum === 3) {
+                if (validateProviderSelection()) {
+                    showStep(4);
+                    startBookGeneration();
+                }
+            }
+        }
+
+        // Previous step function
+        function previousStep() {
+            if (currentStepNum > 1) {
+                showStep(currentStepNum - 1);
+            }
+        }
+
+        // Configure APIs
+        function configureAPIs() {
+            const openaiKey = document.getElementById('openai-key').value;
+            const geminiKey = document.getElementById('gemini-key').value;
+            const anthropicKey = document.getElementById('anthropic-key').value;
+            
+            if (!openaiKey && !geminiKey && !anthropicKey) {
+                showStatus('error', 'Please provide at least one API key to continue.', 'apiStatus');
+                return;
+            }
+            
+            showStatus('loading', 'Configuring APIs...', 'apiStatus');
+            
+            const apiConfig = {};
+            if (openaiKey) apiConfig.openai_key = openaiKey;
+            if (geminiKey) apiConfig.gemini_key = geminiKey;
+            if (anthropicKey) apiConfig.anthropic_key = anthropicKey;
+            
+            fetch('/configure-apis', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(apiConfig)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    configuredAPIs = apiConfig;
+                    showStatus('success', 'APIs configured successfully!', 'apiStatus');
+                    setTimeout(() => showStep(2), 1000);
+                } else {
+                    showStatus('error', 'Failed to configure APIs: ' + data.message, 'apiStatus');
+                }
+            })
+            .catch(error => {
+                showStatus('error', 'Error configuring APIs: ' + error.message, 'apiStatus');
+            });
+        }
+
+        // Validate book form
+        function validateBookForm() {
+            const requiredFields = ['title', 'genre', 'target-audience', 'length', 'theme'];
+            for (let field of requiredFields) {
+                if (!document.getElementById(field).value) {
+                    alert(`Please fill in the ${field.replace('-', ' ')} field.`);
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // Collect book data
+        function collectBookData() {
+            const form = document.getElementById('bookForm');
+            const formData = new FormData(form);
+            bookData = Object.fromEntries(formData.entries());
+            bookData.num_chapters = parseInt(bookData.num_chapters || 10);
+        }
+
+        // Populate provider selection
+        function populateProviderSelection() {
+            const container = document.getElementById('providerSelection');
+            container.innerHTML = '';
+            
+            const providers = [];
+            if (configuredAPIs.openai_key) providers.push({key: 'openai', name: 'OpenAI (GPT-4)', desc: 'Creative and versatile'});
+            if (configuredAPIs.gemini_key) providers.push({key: 'gemini', name: 'Google Gemini', desc: 'Fast and efficient'});
+            if (configuredAPIs.anthropic_key) providers.push({key: 'anthropic', name: 'Anthropic (Claude)', desc: 'Thoughtful and detailed'});
+            
+            providers.forEach((provider, index) => {
+                const div = document.createElement('div');
+                div.style.marginBottom = '1rem';
+                div.innerHTML = `
+                    <input type="radio" id="${provider.key}" name="ai-provider" value="${provider.key}" ${index === 0 ? 'checked' : ''}>
+                    <label for="${provider.key}" style="display: inline; margin-left: 0.5rem;">
+                        <strong>${provider.name}</strong> - ${provider.desc}
+                    </label>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Validate provider selection
+        function validateProviderSelection() {
+            const selected = document.querySelector('input[name="ai-provider"]:checked');
+            if (!selected) {
+                alert('Please select an AI provider.');
+                return false;
+            }
+            selectedProvider = selected.value;
+            return true;
+        }
+
+        // Start book generation
+        function startBookGeneration() {
+            const generationType = document.querySelector('input[name="generation-type"]:checked').value;
+            
+            if (generationType === 'outline') {
+                generateOutline();
+            } else if (generationType === 'full') {
+                generateFullBook();
+            } else {
+                generateChapterByChapter();
+            }
+        }
+
+        // Generate outline
+        function generateOutline() {
+            showStatus('loading', 'Creating your book outline...', 'generationStatus');
+            
+            fetch('/create-outline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    provider: selectedProvider,
+                    book_data: bookData
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showStatus('success', 'Outline generated successfully!', 'generationStatus');
+                    displayOutline(data.outline);
+                } else {
+                    showStatus('error', 'Error: ' + data.message, 'generationStatus');
+                }
+            })
+            .catch(error => {
+                showStatus('error', 'Error: ' + error.message, 'generationStatus');
+            });
+        }
+
+        // Generate full book (simplified for demo)
+        function generateFullBook() {
+            showStatus('loading', 'Generating your complete book... This may take several minutes.', 'generationStatus');
+            
+            fetch('/generate-full-book', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    provider: selectedProvider,
+                    book_data: bookData
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showStatus('success', 'Book generated successfully!', 'generationStatus');
+                    displayFullBook(data);
+                } else {
+                    showStatus('error', 'Error: ' + data.message, 'generationStatus');
+                }
+            })
+            .catch(error => {
+                showStatus('error', 'Error: ' + error.message, 'generationStatus');
+            });
+        }
+
+        // Display outline
+        function displayOutline(outline) {
+            const preview = document.getElementById('bookPreview');
+            preview.innerHTML = `
+                <h3>📋 Your Book Outline</h3>
+                <div class="chapter-content">${outline.replace(/\n/g, '<br>')}</div>
+                <div class="download-section">
+                    <button class="btn btn-success" onclick="downloadText('${bookData.title}_outline.txt', \`${outline.replace(/`/g, '\\`')}\`)">
+                        📥 Download Outline
+                    </button>
+                    <button class="btn" onclick="generateFromOutline()" style="margin-left: 1rem;">
+                        ✨ Generate Chapters from This Outline
+                    </button>
+                </div>
+            `;
+        }
+
+        // Display full book
+        function displayFullBook(data) {
+            const preview = document.getElementById('bookPreview');
+            let html = `
+                <h3>📚 Your Generated Book</h3>
+                <div class="chapter-item">
+                    <div class="chapter-title">Book Outline</div>
+                    <div class="chapter-content">${data.outline.replace(/\n/g, '<br>')}</div>
+                </div>
+            `;
+            
+            data.chapters.forEach(chapter => {
+                html += `
+                    <div class="chapter-item">
+                        <div class="chapter-title">${chapter.title}</div>
+                        <div class="chapter-content">${chapter.content.replace(/\n/g, '<br>')}</div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                <div class="download-section">
+                    <button class="btn btn-success" onclick="downloadBook()">
+                        📥 Download Complete Book
+                    </button>
+                    <p style="margin-top: 1rem; color: #666;">
+                        Generated ${data.total_chapters} chapters. Full book generation may be extended in the pro version.
+                    </p>
+                </div>
+            `;
+            
+            preview.innerHTML = html;
+        }
+
+        // Show status message
+        function showStatus(type, message, containerId) {
+            const container = document.getElementById(containerId);
+            const spinner = type === 'loading' ? '<span class="loading-spinner"></span>' : '';
+            container.innerHTML = `<div class="status ${type}">${spinner}${message}</div>`;
+        }
+
+        // Download text file
+        function downloadText(filename, content) {
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
+            element.setAttribute('download', filename);
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        }
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            updateUI();
+        });
+    </script>
+</body>
+</html>
